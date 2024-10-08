@@ -1,0 +1,25 @@
+Metadata-Version: 2.1
+Name: pdf-annotate
+Version: 0.12.0
+Summary: Add annotations to PDFs
+Home-page: https://github.com/plangrid/pdf-annotate
+Author: Michael Bryant
+Author-email: smart-recordset@plangrid.com
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Dist: attrs (>=18.1.0)
+Requires-Dist: pdfrw (>=0.4)
+Requires-Dist: pillow (>=5.2.0)
+Requires-Dist: fonttools (>=3.44.0)
+Provides-Extra: tests
+Requires-Dist: pre-commit ; extra == 'tests'
+Requires-Dist: pytest ; extra == 'tests'
+Requires-Dist: coverage ; extra == 'tests'
+Requires-Dist: flake8 ; extra == 'tests'
+
+UNKNOWN
+
+
