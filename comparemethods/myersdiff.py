@@ -84,17 +84,3 @@ class MyersDiff:
                 removed.append([prev_x, aline])
 
         return added, removed
-
-if __name__ == "__main__":
-    import myersdiff
-
-
-    # Example usage
-    a = ["line1", "line2", "line3", "line4", "line5", "line6"]
-    b = ["line1", "line2 modified", "line4", "line3", "line5"]
-
-    myers = myersdiff.MyersDiff(a, b)
-    added, removed = myers.get_diff_as_string()
-
-    print("Added lines:", added)
-    print("Removed lines:", removed)
