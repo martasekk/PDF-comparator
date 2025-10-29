@@ -55,28 +55,7 @@ class PDFPageLabel(QLabel):
         self.setMaximumHeight(scaled.height())
         self.updateGeometry()
 
-    def paintEvent(self, event):
-        super().paintEvent(event)
-        if not self.highlights:
-            return
-        painter = QPainter(self)
-        painter.setOpacity(0.3)
-        pm = self.pixmap()
-        if pm is None:
-            painter.end()
-            return
-        sw = pm.width()
-        sh = pm.height()
-        # draw highlights: normalized coords multiplied by current pixmap size
-        for norm_bbox, color in self.highlights:
-            nx0, ny_top, nx1, ny_bottom = norm_bbox
-            x = int(round(nx0 * sw))
-            y = int(round(ny_top * sh))
-            w = max(1, int(round((nx1 - nx0) * sw)))
-            h = max(1, int(round((ny_bottom - ny_top) * sh)))
-            painter.fillRect(QRect(x, y, w, h), QColor(*color))
-        painter.end()
-        
+
 class PDFViewer(QWidget):
     """ScrollArea-based PDF viewer."""
     def __init__(self):
@@ -113,41 +92,56 @@ class PDFViewer(QWidget):
             qt_image = QImage(pix.samples, pix.width, pix.height, pix.stride, fmt)
             qt_pixmap = QPixmap.fromImage(qt_image)
 
-            # Prepare normalized highlights for this page
-            raw_highlights = highlights.get(page_num, []) if highlights else []
-            page_highlights = []
-            pdf_rect = page.rect
-            pdf_w = pdf_rect.width
-            pdf_h = pdf_rect.height
-            pm_w = qt_pixmap.width()
-            pm_h = qt_pixmap.height()
-            # compute mapping from PDF coords (x0,y0,x1,y1, origin bottom-left) to normalized coordinates
-            for item in raw_highlights:
-                # accept either (bbox, color) where bbox=(x0,y0,x1,y1) in PDF points
-                if isinstance(item, (list, tuple)) and len(item) >= 2:
-                    bbox, color = item[0], item[1]
-                    if isinstance(bbox, (list, tuple)) and len(bbox) == 4 and pdf_w and pdf_h:
-                        x0, y0, x1, y1 = bbox
-                        nx0 = x0 / pdf_w
-                        nx1 = x1 / pdf_w
-                        # convert to normalized top-based coordinates for painting
-                        ny_top = (pdf_h - y1) / pdf_h
-                        ny_bottom = (pdf_h - y0) / pdf_h
-                        page_highlights.append(((nx0, ny_top, nx1, ny_bottom), _normalize_qcolor(color)))
-                        continue
-                # if already normalized tuple (norm_bbox, color) accept it
-                if isinstance(item, (list, tuple)) and len(item) == 2 and isinstance(item[0], (list, tuple)) and len(item[0]) == 4:
-                    norm_bbox, color = item
-                    page_highlights.append((tuple(norm_bbox), _normalize_qcolor(color)))
-                    continue
-                # unexpected format -> ignore
-
-            label = PDFPageLabel(qt_pixmap, page_highlights)
+            label = PDFPageLabel(qt_pixmap, highlights)
             label.setAlignment(Qt.AlignCenter)
             self.scroll_layout.addWidget(label)
             self.page_labels.append(label)
             
+    def highlight_differences(self, diffs, pdfDTO, color=(1, 0, 0)):
+        norm_color = _normalize_qcolor(color)
+        highlights_by_page = defaultdict(list)
+
+        for idx, char in diffs:
+            word = pdfDTO.words_pos[idx]
+            bbox = word["bbox"]
+            page_num = word["page_num"]
+            page = pdfDTO.pdf_data[page_num]
+            page_rect = page.rect
+            # Normalize bbox to (0..1) range
+            x0, y0, x1, y1 = bbox
+            nx0 = x0 / page_rect.width
+            nx1 = x1 / page_rect.width
+            # PDF y origin is top, so invert y coords
+            ny0 = 1.0 - (y1 / page_rect.height)
+            ny1 = 1.0 - (y0 / page_rect.height)
+            norm_bbox = (nx0, ny0, nx1, ny1)
+            highlights_by_page[page_num].append((norm_bbox, norm_color))
+
+        # Apply highlights to each page label
+        for page_num, highlights in highlights_by_page.items():
+            if 0 <= page_num < len(self.page_labels):
+                label = self.page_labels[page_num]
+                label.highlights.extend(highlights)
+                label.update()
             
+    # def highlight_differences(self, diffs, pdfDTO, color=(1, 0, 0)):
+    #     for idx, char in diffs:
+    #         word = pdfDTO.words_pos[idx]
+    #         bbox = word["bbox"]
+    #         page_num = word["page_num"]
+
+    #         highlight_rect = fitz.Rect(bbox)
+    #         try: 
+    #             output_page_right = pdfDTO.pdf_data[page_num]
+    #             annot = output_page_right.add_rect_annot(highlight_rect)
+    #             annot.set_colors(stroke=color,
+    #                             fill=color)
+    #             annot.set_opacity(0.2)
+    #             annot.update()
+                
+    #         except Exception as e:
+    #             print(f"Error adding annotation for added char '{char}' at index {idx} with bbox {bbox}: {e}")
+    
     def clear_pdf(self):
         for label in self.page_labels:
             self.scroll_layout.removeWidget(label)
@@ -160,9 +154,6 @@ class PDFViewer(QWidget):
             return
 
         page_label = self.page_labels[page_index]
-
-        # --- Compute Y offset inside scroll area ---
-        # Each page_label is stacked vertically, so get its position
         base_y = page_label.pos().y()
 
         # Get pixmap and sizes
@@ -189,23 +180,6 @@ class PDFViewer(QWidget):
             self._scroll_anims = []
         self._scroll_anims.append(anim)
         
-    def colorize_differences(self, diffs, pdfDTO, color=(1, 0, 0)):
-        for idx, char in diffs:
-            word = pdfDTO.words_pos[idx]
-            bbox = word["bbox"]
-            page_num = word["page_num"]
-
-            highlight_rect = fitz.Rect(bbox)
-            try: 
-                output_page_right = pdfDTO.pdf_data[page_num]
-                annot = output_page_right.add_rect_annot(highlight_rect)
-                annot.set_colors(stroke=color,
-                                fill=color)
-                annot.set_opacity(0.2)
-                annot.update()
-                
-            except Exception as e:
-                print(f"Error adding annotation for added char '{char}' at index {idx} with bbox {bbox}: {e}")
         
     @staticmethod
     def pil_to_qpixmap(img):

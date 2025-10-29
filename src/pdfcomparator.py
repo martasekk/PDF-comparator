@@ -234,8 +234,8 @@ class PDFComparator(QMainWindow, Ui_MainWindow):
         pdfDTOLeft, pdfDTORight = self.pdfworker.pdfDTOLeft, self.pdfworker.pdfDTORight
         self.differences = self.pdfworker._differences
         self.populate_diff_view()
-        self.left_pdf_viewer.colorize_differences(diffs_left, pdfDTOLeft, color=(1, 0, 0))
-        self.right_pdf_viewer.colorize_differences(diffs_right, pdfDTORight, color=(0, 1, 0))
+        self.left_pdf_viewer.highlight_differences(diffs_left, pdfDTOLeft, color=(1, 0, 0))
+        self.right_pdf_viewer.highlight_differences(diffs_right, pdfDTORight, color=(0, 1, 0))
         self.left_pdf_viewer.clear_pdf()
         self.right_pdf_viewer.clear_pdf()
         self.left_pdf_viewer.draw_pdf(pdfDTOLeft.pdf_data)
