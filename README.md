@@ -5,7 +5,7 @@
 
 <div align="center">
 
-<h1>🧭 PDF Comparator (PySide6)</h1>
+<h1>PDF Comparator (PySide6)</h1>
 
 <p>
 <strong>PDF diff viewer</strong> with side-by-side pages, text extraction, and visual highlights
