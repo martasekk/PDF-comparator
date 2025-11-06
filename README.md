@@ -9,7 +9,7 @@
 
 <p>
 <strong>PDF diff viewer</strong> with side-by-side pages, text extraction, and visual highlights
-for <em>added</em> (green) and <em>removed</em> (red) content. Built with <strong>PySide6 / Qt</strong>.
+for <em>added</em> (green) and <em>removed</em> (red) content. Built with <strong>PySide6</strong>.
 </p>
 
 <p>
@@ -72,7 +72,7 @@ pip install PySide6
 
 <details open>
 <summary><strong>3) Run</strong></summary>
-
+</details>
 <hr/>
 
 <h2 id="-ui-overview">🖼️ UI Overview</h2>
