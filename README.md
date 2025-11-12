@@ -96,7 +96,7 @@ pip install PySide6
 │  ├─ pdfviewer.py             # QWidgets that render PDF pages and highlights
 │  ├─ pdfdto.py                # Data transfer object for pdf 
 │  └─ pdfcomparator.py         # Main class holding everything together 
-└─ app.py / main.py            # App entrypoint
+└─ main.py                     # App entrypoint
   
 </code></pre>
 
